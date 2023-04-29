@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Fetch Page Data Example</title>
+</head>
+<body>
+  <div id="content"></div>
+
+  <script>
+    window.onload = function() {
+      fetchPageData(1); // Replace 1 with the ID of the page you want to fetch
+    }
+
+    function fetchPageData(pageId) {
+      // Send an AJAX request to fetch the page data
+      // Replace /fetch-page-data with the endpoint of your API
+      fetch('/fetch-page-data.php?id=' + pageId)
+        .then(response => response.json())
+        .then(data => {
+          // Update the content of the page with the fetched data
+          document.getElementById('content').innerHTML = data.html;
+          // Apply the fetched CSS styles to the page
+          var styleElement = document.createElement('style');
+          styleElement.textContent = data.css;
+          document.head.appendChild(styleElement);
+        })
+        .catch(error => console.error(error));
+    }
+  </script>
+</body>
+</html>
+
+
+
+<!-- // Retrieve the page design from the database
+$pageDesign = TableRegistry::getTableLocator()->get('PageDesigns')->get($pageDesignId);
+
+// Retrieve the related components from the database
+$pageComponents = TableRegistry::getTableLocator()->get('PageComponents')->find()
+    ->where(['page_design_id' => $pageDesignId])
+    ->toArray();
+
+// Pass the page design and components data to the view
+$this->set(compact('pageDesign', 'pageComponents'));
+$this->viewBuilder()->setLayout('default');
+
+// Render the page in the template
+echo $pageDesign->html;
+echo '<style>' . $pageDesign->css . '</style>';
+
+foreach ($pageComponents as $component) {
+    echo $component->html;
+    echo '<style>' . $component->css . '</style>';
+} -->
+
