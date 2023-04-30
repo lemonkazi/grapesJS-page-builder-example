@@ -35,21 +35,21 @@
 				fetchPageData(1); // Replace 1 with the ID of the page you want to fetch
 			}
 			function fetchPageData(pageId) {
-  $.ajax({
-    url: '/fetch-page',
-    type: 'POST',
-    data: { id: pageId },
-    success: function(response) {
-      // Set the editor's HTML and CSS content
-      editor.setComponents(response.html);
-      editor.setStyle(response.css);
-    },
-    error: function(error) {
-      // Show an error message
-      alert('Error fetching page: ' + error.message);
-    }
-  });
-}
+        $.ajax({
+          url: '/fetch-page',
+          type: 'POST',
+          data: { id: pageId },
+          success: function(response) {
+            // Set the editor's HTML and CSS content
+            editor.setComponents(response.html);
+            editor.setStyle(response.css);
+          },
+          error: function(error) {
+            // Show an error message
+            alert('Error fetching page: ' + error.message);
+          }
+        });
+      }
 
       function savePage() {
         //editor.getPage().toJSON();
@@ -58,18 +58,15 @@
         var css = editor.getCss();
         
         var components = [];
-  var componentsEl = editor.DomComponents.getComponents();
-  componentsEl.forEach(function(componentEl) {
-    var componentHtml = componentEl.toHTML();
-    var componentCss = componentEl.getStyle();
-    components.push({
-      html: componentHtml,
-      css: componentCss
-    });
-  });
-   console.log(components);
-   console.log(html);
-        return false;
+        var componentsEl = editor.DomComponents.getComponents();
+        componentsEl.forEach(function(componentEl) {
+          var componentHtml = componentEl.toHTML();
+          var componentCss = componentEl.getStyle();
+          components.push({
+            html: componentHtml,
+            css: componentCss
+          });
+        });
         // Save the HTML and CSS to the database
         $.ajax({
           url: "/save-page.php",
