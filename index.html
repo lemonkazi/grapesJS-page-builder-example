@@ -7,32 +7,175 @@
       rel="stylesheet"
       href="https://unpkg.com/grapesjs/dist/css/grapes.min.css"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <script src="https://unpkg.com/grapesjs"></script>
   </head>
   <body>
-    <div id="gjs"></div>
+    <style>
+    .gjs-mdl-container {
+        font-family: Helvetica,sans-serif;
+        overflow-y: auto;
+        position: fixed;
+        background-color: rgba(0,0,0,.5);
+        display: flex;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1111;
+    }
+    </style>
+    
+    <div class="row">
+      <div class="col-md-12" id="gjs">
+        
+      </div>
+    </div>
+    
     <button onclick="savePage()">Save Page</button>
 		<!-- Include the plugins here -->
-		<script src="https://unpkg.com/grapesjs-image-editor"></script>
-		<script src="https://unpkg.com/grapesjs-forms"></script>
 		<script src="https://unpkg.com/grapesjs-blocks-basic"></script>
 		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/grapesjs-plugin-export@1.0.11/dist/index.js"></script>
+    <script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
     
 		
     <script>
       var editor = grapesjs.init({
-				container: '#gjs',
-				plugins: ['gjs-blocks-basic', 'gjs-image-editor', 'gjs-forms'],
-				blockManager: {
-					blocks: [{
-						id: 'my-block',
-						label: 'My Block',
-						content: '<div class="my-block">This is my custom block!</div>',
-					}]
-				}
-			});
+        container: '#gjs',
+        fromElement: true,
+        plugins: ['gjs-code','gjs-blocks-basic', 'grapesjs-plugin-export'],
+        pluginsOpts: {
+          'grapesjs-plugin-export': { /* options */ },
+          'gjs-code': {
+            codeViewer: true
+          }
+        },
+        storageManager: {
+          id: 'gjs-',             // Prefix identifier that will be used to distinguish storage keys
+          type: 'local',          // Type of the storage
+          autosave: true,         // Store data automatically
+          autoload: true,         // Load data on init
+          stepsBeforeSave: 1,     // If autosave enabled, indicates how many changes are necessary before store method is triggered
+          storeComponents: true,  // Enable/Disable storing of components in JSON format
+          storeStyles: true,      // Enable/Disable storing of rules in JSON format
+          storeHtml: true,        // Enable/Disable storing of components as HTML string
+          storeCss: true,         // Enable/Disable storing of rules as CSS string
+        },
+        blockManager: {
+        // appendTo: "#blocks",
+          blocks: [{
+            id: 'my-block',
+            label: 'My Block',
+            content: '<div class="my-block">This is my custom block!</div>',
+          }]
+        },
+        
+      });
+      
+      // Create the import button
+      const importBtn = editor.Panels.addButton('options', {
+        id: 'import',
+        className: 'fa fa-file-import',
+        command: 'import',
+        attributes: {
+          title: 'Import'
+        }
+      });
+      // Add a command to the import button
+      editor.Commands.add('import', {
+        run: (editor) => {
+          const modal = editor.Modal;
+          modal.setTitle('Import');
+          modal.setContent(`<form><input type="file" accept=".zip" name="file"></form>`);
+          modal.open();
+
+          const form = modal.getContentEl().querySelector('form');
+          const fileInput = form.querySelector('input[type=file]');
+          fileInput.addEventListener('change', async (event) => {
+            event.preventDefault(); // Prevent the default form submission behavior
+
+            const file = fileInput.files[0];
+            const zip = await JSZip.loadAsync(file);
+            const htmlFile = zip.file('index.html');
+            const cssFolder = zip.folder('css');
+            const cssFile = cssFolder.file('style.css');
+
+            if (htmlFile && cssFile) {
+              const [html, css] = await Promise.all([htmlFile.async('text'), cssFile.async('text')]);
+              editor.setComponents(html, { css });
+              modal.close();
+            }
+          });
+        }
+      });
+      
+      // Add "Undo" command
+      editor.Commands.add('undo', {
+        run: (editor) => {
+          editor.UndoManager.undo();
+        },
+      });
+
+      // Add "Redo" command
+      editor.Commands.add('redo', {
+        run: (editor) => {
+          editor.UndoManager.redo();
+        },
+      });
+      
+      // Add "Delete" command
+      editor.Commands.add('delete', {
+        run: (editor, sender) => {
+          sender.set('active', 0);
+          const selected = editor.getSelected();
+          if (selected && selected.length) {
+            if (confirm('Are you sure you want to delete the selected component(s)?')) {
+              selected.forEach((model) => model.remove());
+            }
+          } else {
+            if (confirm('Are you sure you want to delete all components?')) {
+              editor.DomComponents.clear();
+            }
+          }
+        },
+      });
+      
+      
+      // Add buttons to the toolbar
+      editor.Panels.addButton('options', {
+        id: 'undo',
+        className: 'fa fa-undo',
+        command: 'undo',
+        attributes: { title: 'Undo' },
+      });
+
+      editor.Panels.addButton('options', {
+        id: 'redo',
+        className: 'fa fa-redo',
+        command: 'redo',
+        attributes: { title: 'Redo' },
+      });
+
+      editor.Panels.addButton('options', {
+        id: 'delete',
+        className: 'fa fa-trash',
+        command: 'delete',
+        attributes: { title: 'Delete' },
+      });
+      
+      editor.on('load', function() {
+        var panelManager = editor.Panels;
+        var openBlocksBtn = panelManager.getButton('views', 'open-blocks');
+        openBlocksBtn && openBlocksBtn.set('active', 1);
+      });
+      
+      
 			window.onload = function() {
-				fetchPageData(1); // Replace 1 with the ID of the page you want to fetch
+				//fetchPageData(1); // Replace 1 with the ID of the page you want to fetch
 			}
 			function fetchPageData(pageId) {
         $.ajax({
